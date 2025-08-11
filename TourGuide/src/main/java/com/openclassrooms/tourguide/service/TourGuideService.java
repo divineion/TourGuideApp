@@ -1,5 +1,7 @@
 package com.openclassrooms.tourguide.service;
 
+import com.openclassrooms.tourguide.dto.NearbyAttractionDto;
+import com.openclassrooms.tourguide.helper.Constants;
 import com.openclassrooms.tourguide.helper.InternalTestHelper;
 import com.openclassrooms.tourguide.tracker.Tracker;
 import com.openclassrooms.tourguide.user.User;
@@ -7,7 +9,7 @@ import com.openclassrooms.tourguide.user.UserReward;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -95,15 +97,57 @@ public class TourGuideService {
 		return visitedLocation;
 	}
 
+	/**
+	 * Returns the nearest tourist attractions to the specified user location sorted by ascending distance
+	 * from the given location.
+	 *
+	 * @param visitedLocation the user's last known location
+	 * @return a list of the nearest {@link Attraction}
+	 */
 	public List<Attraction> getNearByAttractions(VisitedLocation visitedLocation) {
-		List<Attraction> nearbyAttractions = new ArrayList<>();
-		for (Attraction attraction : gpsUtil.getAttractions()) {
-			if (rewardsService.isWithinAttractionProximity(attraction, visitedLocation.location)) {
-				nearbyAttractions.add(attraction);
-			}
-		}
+		List<Attraction> attractions = gpsUtil.getAttractions();
 
-		return nearbyAttractions;
+		return attractions.stream()
+				.sorted(Comparator.comparingDouble(attraction ->
+						rewardsService.getDistance(visitedLocation.location,
+													new Location(attraction.latitude, attraction.longitude))))
+				.limit(Constants.NB_OF_NEARBY_ATTRACTIONS)
+				.toList();
+	}
+
+	/**
+	 * Builds detailed information about the given attractions for a specified user.
+	 * <p>
+	 * For each attraction, this method calculates:
+	 * <ul>
+	 *   <li>The attraction's location and name,</li>
+	 *   <li>the distance from the user's current location,</li>
+	 *   <li>and the number of reward points the user can earn,</li>
+	 * </ul>
+	 * then creates a {@link NearbyAttractionDto} object for each attraction and
+	 * returns the complete list.
+	 *
+	 * @param user the user for whom distances and reward points are calculated
+	 * @param attractions the list of attractions to include
+	 * @return a list of {@link NearbyAttractionDto} objects containing location,
+	 *         distance from the user, and reward points for each attraction
+	 */
+	public List<NearbyAttractionDto> getNearByAttractionsInfo(User user, List<Attraction> attractions) {
+		Location userLocation = getUserLocation(user).location;
+
+		return attractions.stream().map(attraction -> {
+			Location attractionLocation = new Location(attraction.latitude, attraction.longitude);
+			double distance = rewardsService.getDistance(userLocation, attractionLocation);
+			int rewardPoints = rewardsService.getRewardPoints(attraction, user);
+
+			return new NearbyAttractionDto(
+				attraction.attractionName,
+				attractionLocation,
+				userLocation,
+				distance,
+				rewardPoints
+			);
+		}).toList();
 	}
 
 	private void addShutDownHook() {
