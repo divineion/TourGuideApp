@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang3.time.StopWatch;
@@ -86,7 +87,17 @@ public class TestPerformance {
 		allUsers = tourGuideService.getAllUsers();
 		allUsers.forEach(u -> u.addToVisitedLocations(new VisitedLocation(u.getUserId(), attraction, new Date())));
 
-		allUsers.forEach(u -> rewardsService.calculateRewards(u));
+		List<CompletableFuture<Void>> calculateRewardsFutures = new ArrayList<>();
+
+		allUsers.forEach(u -> {
+			// calculateRewards() retourne maintenant un CF qu'on ajoute à la collection
+			CompletableFuture<Void> future = rewardsService.calculateRewards(u);
+			// ajouter chaque CF à la collection
+			calculateRewardsFutures.add(future);
+		});
+
+		// récupérer chaque résultat ici
+		calculateRewardsFutures.forEach(CompletableFuture::join);
 
 		for (User user : allUsers) {
 			assertTrue(user.getUserRewards().size() > 0);
