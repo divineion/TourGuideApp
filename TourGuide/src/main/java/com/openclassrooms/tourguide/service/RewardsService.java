@@ -27,6 +27,8 @@ public class RewardsService {
 	private final GpsUtil gpsUtil;
 	private final RewardCentral rewardsCentral;
 
+    private final List<Attraction> allAttractions = AttractionsService.allAttractions;
+
     private final ExecutorService executorService = Executors.newCachedThreadPool();
 
     public RewardsService(GpsUtil gpsUtil, RewardCentral rewardCentral) {
@@ -46,7 +48,6 @@ public class RewardsService {
         return CompletableFuture.runAsync(() -> {
             synchronized (user) {
                 List<VisitedLocation> userLocations = new CopyOnWriteArrayList<>(user.getVisitedLocations());
-                List<Attraction> attractions = gpsUtil.getAttractions();
 
                 for (VisitedLocation visitedLocation : userLocations) {
                     for (Attraction attraction : attractions) {
@@ -54,6 +55,7 @@ public class RewardsService {
                             if (nearAttraction(visitedLocation, attraction)) {
                                 user.addUserReward(new UserReward(visitedLocation, attraction, getRewardPoints(attraction, user)));
                             }
+                    for (Attraction attraction : allAttractions) {
                         }
                     }
                 }
