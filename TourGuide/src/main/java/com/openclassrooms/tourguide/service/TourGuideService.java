@@ -91,6 +91,12 @@ public class TourGuideService {
 		return providers;
 	}
 
+	/**
+	 * Retrieves the location of a user, adds it to their visited locations,
+	 * and updates their accessible rewards list.
+	 *
+	 * @param user {@link User} to track location for
+	 */
 	public VisitedLocation trackUserLocation(User user) {
 		VisitedLocation visitedLocation = gpsUtil.getUserLocation(user.getUserId());
 		user.addToVisitedLocations(visitedLocation);
@@ -100,6 +106,15 @@ public class TourGuideService {
 
 		return visitedLocation;
 	}
+
+	/**
+	 * Retrieves the location of each user from a list, adds it to the user's visited locations,
+	 * and updates the list of the user's accessible rewards.
+	 * @param users a list of {@link User} to track locations for
+	 */
+	public void trackUsersLocations(List<User> users) {
+        users.parallelStream().forEach(this::trackUserLocation);
+    }
 
 	/**
 	 * Returns the nearest tourist attractions to the specified user location sorted by ascending distance
