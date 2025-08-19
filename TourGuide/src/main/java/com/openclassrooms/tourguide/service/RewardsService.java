@@ -50,12 +50,11 @@ public class RewardsService {
                 List<VisitedLocation> userLocations = new CopyOnWriteArrayList<>(user.getVisitedLocations());
 
                 for (VisitedLocation visitedLocation : userLocations) {
-                    for (Attraction attraction : attractions) {
+                    for (Attraction attraction : allAttractions) {
                         if (user.getUserRewards().stream().noneMatch(r -> r.attraction.attractionName.equals(attraction.attractionName))) {
                             if (nearAttraction(visitedLocation, attraction)) {
                                 user.addUserReward(new UserReward(visitedLocation, attraction, getRewardPoints(attraction, user)));
                             }
-                    for (Attraction attraction : allAttractions) {
                         }
                     }
                 }
