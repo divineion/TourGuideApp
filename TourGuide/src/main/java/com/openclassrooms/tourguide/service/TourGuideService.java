@@ -40,6 +40,7 @@ public class TourGuideService {
 	private final TripPricer tripPricer = new TripPricer();
 	public final Tracker tracker;
 	boolean testMode = true;
+	private final List<Attraction> allAttractions = AttractionsService.allAttractions;
 
 	public TourGuideService(GpsUtil gpsUtil, RewardsService rewardsService) {
 		this.gpsUtil = gpsUtil;
@@ -108,9 +109,7 @@ public class TourGuideService {
 	 * @return a list of the nearest {@link Attraction}
 	 */
 	public List<Attraction> getNearByAttractions(VisitedLocation visitedLocation) {
-		List<Attraction> attractions = gpsUtil.getAttractions();
-
-		return attractions.stream()
+		return allAttractions.stream()
 				.sorted(Comparator.comparingDouble(attraction ->
 						rewardsService.getDistance(visitedLocation.location,
 													new Location(attraction.latitude, attraction.longitude))))
