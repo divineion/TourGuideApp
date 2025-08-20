@@ -8,13 +8,15 @@ cache:            # jobs that use the same cache don’t have to download the fi
     - .m2/repository
   key: "$CI_COMMIT_REF_SLUG" # all commits from the same branch will share the cache
 
-build-job:
+package-job:
   stage: package
   script:
-    - ./mvnw package
-      -Dhttps.protocols=TLSv1.2
-      -Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository
-      -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN
-      -Dorg.slf4j.simpleLogger.showDateTime=true
-      -Djava.awt.headless=true
+    - cd TourGuide
+    - |
+      ./mvnw package \
+      -Dhttps.protocols=TLSv1.2 \
+      -Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository \
+      -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN \
+      -Dorg.slf4j.simpleLogger.showDateTime=true \
+      -Djava.awt.headless=true \
       --batch-mode --errors --fail-at-end --show-version -DinstallAtEnd=true -DdeployAtEnd=true
