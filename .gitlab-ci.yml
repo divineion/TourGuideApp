@@ -6,6 +6,7 @@ variables:
 stages:          # List of stages for jobs, and their order of execution
   - prepare
   - build
+  - test
   - package
 
 cache:            # jobs that use the same cache don’t have to download the files again
@@ -26,18 +27,27 @@ build-job: # check the local maven repository contains installed JARs and compil
   stage: build
   script:
     - cd TourGuide
-    - ls -lR $CI_PROJECT_DIR/.m2/repository
     - mvn clean compile
+
+test-job: # execute tests
+  stage: test
+  script:
+    - cd TourGuide
+    - mvn clean test
 
 package-job: # package the project
   stage: package
   script:
     - cd TourGuide
     - |
-      ./mvnw package \
+      ./mvnw clean package \
       -Dhttps.protocols=TLSv1.2 \
       -Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository \
       -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN \
       -Dorg.slf4j.simpleLogger.showDateTime=true \
       -Djava.awt.headless=true \
       --batch-mode --errors --fail-at-end --show-version -DinstallAtEnd=true -DdeployAtEnd=true
+  artifacts:
+    paths:
+      - TourGuide/target/*.jar
+    name: "tourguide-jar-artifacts"
