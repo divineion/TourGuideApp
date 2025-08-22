@@ -27,7 +27,6 @@ build-job: # check the local maven repository contains installed JARs and compil
   stage: build
   script:
     - cd TourGuide
-    - ls -lR $CI_PROJECT_DIR/.m2/repository
     - mvn clean compile
 
 test-job: # execute tests
@@ -41,7 +40,7 @@ package-job: # package the project
   script:
     - cd TourGuide
     - |
-      ./mvnw package \
+      ./mvnw clean package \
       -Dhttps.protocols=TLSv1.2 \
       -Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository \
       -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN \
