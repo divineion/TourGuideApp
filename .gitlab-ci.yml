@@ -51,3 +51,4 @@ package-job: # package the project
   artifacts:
     paths:
       - TourGuide/target/*.jar
+    name: "tourguide-jar-artifacts"
