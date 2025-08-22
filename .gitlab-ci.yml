@@ -1,7 +1,11 @@
 image: eclipse-temurin:17-jdk-alpine
 
+variables:
+  MAVEN_OPTS: "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository" # absolute path to local repository, will be used to installe xternal libs
+
 stages:          # List of stages for jobs, and their order of execution
-  - debug
+  - prepare
+  - build
   - package
 
 cache:            # jobs that use the same cache don’t have to download the files again
@@ -9,18 +13,26 @@ cache:            # jobs that use the same cache don’t have to download the fi
     - .m2/repository
   key: "$CI_COMMIT_REF_SLUG" # all commits from the same branch will share the cache
 
-debug-job:
-  stage: debug
+prepare-job: # first create maven local repository and install external libs
+  stage: prepare
   script:
-    - ls -lR $CI_PROJECT_DIR/.m2/repository
+    - mkdir -p $CI_PROJECT_DIR/.m2/repository # -p option : create all parents if thye don't exist, avoid error if they already exist
+    - cd TourGuide
+    - mvn install:install-file -Dfile=libs/gpsUtil.jar -DgroupId=gpsUtil -DartifactId=gpsUtil -Dversion=1.0.0 -Dpackaging=jar
+    - mvn install:install-file -Dfile=libs/RewardCentral.jar -DgroupId=rewardCentral -DartifactId=rewardCentral -Dversion=1.0.0 -Dpackaging=jar
+    - mvn install:install-file -Dfile=libs/TripPricer.jar -DgroupId=tripPricer -DartifactId=tripPricer -Dversion=1.0.0 -Dpackaging=jar
 
-package-job:
+build-job: # check the local maven repository contains installed JARs and compile
+  stage: build
+  script:
+    - cd TourGuide
+    - ls -lR $CI_PROJECT_DIR/.m2/repository
+    - mvn clean compile
+
+package-job: # package the project
   stage: package
   script:
     - cd TourGuide
-    - mvn install:install-file -Dfile=libs/gpsUtil.jar -DgroupId=gpsUtil -DartifactId=gpsUtil -Dversion=1.0.0 -Dpackaging=jar -DlocalRepositoryPath=$CI_PROJECT_DIR/.m2/repository
-    - mvn install:install-file -Dfile=libs/RewardCentral.jar -DgroupId=rewardCentral -DartifactId=rewardCentral -Dversion=1.0.0 -Dpackaging=jar -DlocalRepositoryPath=$CI_PROJECT_DIR/.m2/repository
-    - mvn install:install-file -Dfile=libs/TripPricer.jar -DgroupId=tripPricer -DartifactId=tripPricer -Dversion=1.0.0 -Dpackaging=jar -DlocalRepositoryPath=$CI_PROJECT_DIR/.m2/repository
     - |
       ./mvnw package \
       -Dhttps.protocols=TLSv1.2 \
