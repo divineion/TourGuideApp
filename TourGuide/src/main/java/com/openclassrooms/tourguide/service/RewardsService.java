@@ -29,7 +29,7 @@ public class RewardsService {
 
     private final List<Attraction> allAttractions = AttractionsService.allAttractions;
 
-    private final ExecutorService executorService = Executors.newCachedThreadPool();
+    private final ExecutorService executorService = Executors.newFixedThreadPool(500);
 
     public RewardsService(GpsUtil gpsUtil, RewardCentral rewardCentral) {
 		this.gpsUtil = gpsUtil;
