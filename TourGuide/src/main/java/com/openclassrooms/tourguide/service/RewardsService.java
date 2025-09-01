@@ -8,7 +8,6 @@ import java.util.concurrent.Executors;
 
 import org.springframework.stereotype.Service;
 
-import gpsUtil.GpsUtil;
 import gpsUtil.location.Attraction;
 import gpsUtil.location.Location;
 import gpsUtil.location.VisitedLocation;
@@ -24,15 +23,13 @@ public class RewardsService {
     private int defaultProximityBuffer = 10;
 	private int proximityBuffer = defaultProximityBuffer;
 	private int attractionProximityRange = 200;
-	private final GpsUtil gpsUtil;
 	private final RewardCentral rewardsCentral;
 
     private final List<Attraction> allAttractions = AttractionsService.allAttractions;
 
     private final ExecutorService executorService = Executors.newFixedThreadPool(500);
 
-    public RewardsService(GpsUtil gpsUtil, RewardCentral rewardCentral) {
-		this.gpsUtil = gpsUtil;
+    public RewardsService(RewardCentral rewardCentral) {
 		this.rewardsCentral = rewardCentral;
 	}
 	
