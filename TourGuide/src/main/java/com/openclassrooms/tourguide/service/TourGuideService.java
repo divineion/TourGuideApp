@@ -9,15 +9,7 @@ import com.openclassrooms.tourguide.user.UserReward;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Random;
-import java.util.UUID;
-import java.util.stream.Collectors;
+import java.util.*;
 import java.util.stream.IntStream;
 
 import org.slf4j.Logger;
@@ -32,6 +24,22 @@ import gpsUtil.location.VisitedLocation;
 import tripPricer.Provider;
 import tripPricer.TripPricer;
 
+/**
+ * Core service of the TourGuide application.
+ * <p>
+ * Responsible for:
+ * <ul>
+ *     <li>Tracking users' locations,</li>
+ *     <li>Calculating rewards for visited attractions,</li>
+ *     <li>Providing information about nearby attractions,</li>
+ *     <li>Retrieving commercial offers from partners.</li>
+ * </ul>
+ * </p>
+ * <p>
+ * Supports a "test mode" where internal users are automatically created with
+ * simulated locations and rewards.
+ * </p>
+ */
 @Service
 public class TourGuideService {
 	private final Logger logger = LoggerFactory.getLogger(TourGuideService.class);
@@ -58,6 +66,12 @@ public class TourGuideService {
 		addShutDownHook();
 	}
 
+	/**
+	 * Returns the list of rewards associated with the specified user.
+	 *
+	 * @param user the user whose rewards are requested
+	 * @return a list of {@link UserReward} objects
+	 */
 	public List<UserReward> getUserRewards(User user) {
 		return user.getUserRewards();
 	}
