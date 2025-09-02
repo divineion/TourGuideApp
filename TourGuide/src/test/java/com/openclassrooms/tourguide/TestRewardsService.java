@@ -38,12 +38,11 @@ public class TestRewardsService {
 		tourGuideService.trackUserLocation(user);
 		List<UserReward> userRewards = user.getUserRewards();
 		tourGuideService.tracker.stopTracking();
-		assertTrue(userRewards.size() == 1);
+        assertEquals(1, userRewards.size());
 	}
 
 	@Test
 	public void isWithinAttractionProximity() {
-		GpsUtil gpsUtil = new GpsUtil();
 		RewardsService rewardsService = new RewardsService(new RewardCentral());
 		Attraction attraction = allAttractions.get(0);
 		assertTrue(rewardsService.isWithinAttractionProximity(attraction, attraction));
