@@ -63,9 +63,8 @@ public class TourGuideService {
 	}
 
 	public VisitedLocation getUserLocation(User user) {
-		VisitedLocation visitedLocation = (user.getVisitedLocations().size() > 0) ? user.getLastVisitedLocation()
-				: trackUserLocation(user);
-		return visitedLocation;
+        return (!user.getVisitedLocations().isEmpty()) ? user.getLastVisitedLocation()
+                : trackUserLocation(user);
 	}
 
 	public User getUser(String userName) {
