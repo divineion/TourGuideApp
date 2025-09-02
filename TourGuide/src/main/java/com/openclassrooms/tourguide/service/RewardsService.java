@@ -33,7 +33,7 @@ public class RewardsService {
      * This value is used to initialize the proximityBuffer and can be modified at runtime
      * via {@link #setProximityBuffer(int)}.
      */
-    private int defaultProximityBuffer = 10;
+    private final int defaultProximityBuffer = 10;
 
     /**
      * Current distance in miles used to determine if a user is near an attraction.
@@ -41,11 +41,6 @@ public class RewardsService {
      * can be updated via {@link #setProximityBuffer(int)}.</p>
      */
     private int proximityBuffer = defaultProximityBuffer;
-
-    /**
-     * Maximum distance in miles to consider an attraction as nearby.
-     */
-    private int attractionProximityRange = 200;
 
     private final RewardCentral rewardsCentral;
 
@@ -95,7 +90,8 @@ public class RewardsService {
     }
 	
 	public boolean isWithinAttractionProximity(Attraction attraction, Location location) {
-		return getDistance(attraction, location) <= attractionProximityRange;
+        int attractionProximityRange = 200;
+        return getDistance(attraction, location) <= attractionProximityRange;
 	}
 
     /**
