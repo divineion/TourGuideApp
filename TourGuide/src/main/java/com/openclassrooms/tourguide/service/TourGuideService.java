@@ -1,5 +1,7 @@
 package com.openclassrooms.tourguide.service;
 
+import com.openclassrooms.tourguide.dto.NearbyAttractionDto;
+import com.openclassrooms.tourguide.helper.Constants;
 import com.openclassrooms.tourguide.helper.InternalTestHelper;
 import com.openclassrooms.tourguide.tracker.Tracker;
 import com.openclassrooms.tourguide.user.User;
@@ -7,15 +9,7 @@ import com.openclassrooms.tourguide.user.UserReward;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Random;
-import java.util.UUID;
-import java.util.stream.Collectors;
+import java.util.*;
 import java.util.stream.IntStream;
 
 import org.slf4j.Logger;
@@ -30,14 +24,31 @@ import gpsUtil.location.VisitedLocation;
 import tripPricer.Provider;
 import tripPricer.TripPricer;
 
+/**
+ * Core service of the TourGuide application.
+ * <p>
+ * Responsible for:
+ * <ul>
+ *     <li>Tracking users' locations,</li>
+ *     <li>Calculating rewards for visited attractions,</li>
+ *     <li>Providing information about nearby attractions,</li>
+ *     <li>Retrieving commercial offers from partners.</li>
+ * </ul>
+ * </p>
+ * <p>
+ * Supports a "test mode" where internal users are automatically created with
+ * simulated locations and rewards.
+ * </p>
+ */
 @Service
 public class TourGuideService {
-	private Logger logger = LoggerFactory.getLogger(TourGuideService.class);
+	private final Logger logger = LoggerFactory.getLogger(TourGuideService.class);
 	private final GpsUtil gpsUtil;
 	private final RewardsService rewardsService;
 	private final TripPricer tripPricer = new TripPricer();
 	public final Tracker tracker;
 	boolean testMode = true;
+	private final List<Attraction> allAttractions = AttractionsService.allAttractions;
 
 	public TourGuideService(GpsUtil gpsUtil, RewardsService rewardsService) {
 		this.gpsUtil = gpsUtil;
@@ -55,14 +66,19 @@ public class TourGuideService {
 		addShutDownHook();
 	}
 
+	/**
+	 * Returns the list of rewards associated with the specified user.
+	 *
+	 * @param user the user whose rewards are requested
+	 * @return a list of {@link UserReward} objects
+	 */
 	public List<UserReward> getUserRewards(User user) {
 		return user.getUserRewards();
 	}
 
 	public VisitedLocation getUserLocation(User user) {
-		VisitedLocation visitedLocation = (user.getVisitedLocations().size() > 0) ? user.getLastVisitedLocation()
-				: trackUserLocation(user);
-		return visitedLocation;
+        return (!user.getVisitedLocations().isEmpty()) ? user.getLastVisitedLocation()
+                : trackUserLocation(user);
 	}
 
 	public User getUser(String userName) {
@@ -70,7 +86,7 @@ public class TourGuideService {
 	}
 
 	public List<User> getAllUsers() {
-		return internalUserMap.values().stream().collect(Collectors.toList());
+		return new ArrayList<>(internalUserMap.values());
 	}
 
 	public void addUser(User user) {
@@ -80,7 +96,7 @@ public class TourGuideService {
 	}
 
 	public List<Provider> getTripDeals(User user) {
-		int cumulatativeRewardPoints = user.getUserRewards().stream().mapToInt(i -> i.getRewardPoints()).sum();
+		int cumulatativeRewardPoints = user.getUserRewards().stream().mapToInt(UserReward::getRewardPoints).sum();
 		List<Provider> providers = tripPricer.getPrice(tripPricerApiKey, user.getUserId(),
 				user.getUserPreferences().getNumberOfAdults(), user.getUserPreferences().getNumberOfChildren(),
 				user.getUserPreferences().getTripDuration(), cumulatativeRewardPoints);
@@ -88,22 +104,79 @@ public class TourGuideService {
 		return providers;
 	}
 
+	/**
+	 * Retrieves the location of a user, adds it to their visited locations,
+	 * and updates their accessible rewards list.
+	 *
+	 * @param user {@link User} to track location for
+	 */
 	public VisitedLocation trackUserLocation(User user) {
 		VisitedLocation visitedLocation = gpsUtil.getUserLocation(user.getUserId());
 		user.addToVisitedLocations(visitedLocation);
-		rewardsService.calculateRewards(user);
+
+		rewardsService.calculateRewards(user).join();
+
 		return visitedLocation;
 	}
 
-	public List<Attraction> getNearByAttractions(VisitedLocation visitedLocation) {
-		List<Attraction> nearbyAttractions = new ArrayList<>();
-		for (Attraction attraction : gpsUtil.getAttractions()) {
-			if (rewardsService.isWithinAttractionProximity(attraction, visitedLocation.location)) {
-				nearbyAttractions.add(attraction);
-			}
-		}
+	/**
+	 * Retrieves the location of each user from a list, adds it to the user's visited locations,
+	 * and updates the list of the user's accessible rewards.
+	 * @param users a list of {@link User} to track locations for
+	 */
+	public void trackUsersLocations(List<User> users) {
+        users.parallelStream().forEach(this::trackUserLocation);
+    }
 
-		return nearbyAttractions;
+	/**
+	 * Returns the nearest tourist attractions to the specified user location sorted by ascending distance
+	 * from the given location.
+	 *
+	 * @param visitedLocation the user's last known location
+	 * @return a list of the nearest {@link Attraction}
+	 */
+	public List<Attraction> getNearByAttractions(VisitedLocation visitedLocation) {
+		return allAttractions.stream()
+				.sorted(Comparator.comparingDouble(attraction ->
+						rewardsService.getDistance(visitedLocation.location,
+													new Location(attraction.latitude, attraction.longitude))))
+				.limit(Constants.NB_OF_NEARBY_ATTRACTIONS)
+				.toList();
+	}
+
+	/**
+	 * Builds detailed information about the given attractions for a specified user.
+	 * <p>
+	 * For each attraction, this method calculates:
+	 * <ul>
+	 *   <li>The attraction's location and name,</li>
+	 *   <li>the distance from the user's current location,</li>
+	 *   <li>and the number of reward points the user can earn,</li>
+	 * </ul>
+	 * then creates a {@link NearbyAttractionDto} object for each attraction and
+	 * returns the complete list.
+	 *
+	 * @param user the user for whom distances and reward points are calculated
+	 * @param attractions the list of attractions to include
+	 * @return a list of {@link NearbyAttractionDto} objects containing location,
+	 *         distance from the user, and reward points for each attraction
+	 */
+	public List<NearbyAttractionDto> getNearByAttractionsInfo(User user, List<Attraction> attractions) {
+		Location userLocation = getUserLocation(user).location;
+
+		return attractions.stream().map(attraction -> {
+			Location attractionLocation = new Location(attraction.latitude, attraction.longitude);
+			double distance = rewardsService.getDistance(userLocation, attractionLocation);
+			int rewardPoints = rewardsService.getRewardPoints(attraction, user);
+
+			return new NearbyAttractionDto(
+				attraction.attractionName,
+				attractionLocation,
+				userLocation,
+				distance,
+				rewardPoints
+			);
+		}).toList();
 	}
 
 	private void addShutDownHook() {
@@ -134,7 +207,7 @@ public class TourGuideService {
 
 			internalUserMap.put(userName, user);
 		});
-		logger.debug("Created " + InternalTestHelper.getInternalUserNumber() + " internal test users.");
+        logger.debug("Created {} internal test users.", InternalTestHelper.getInternalUserNumber());
 	}
 
 	private void generateUserLocationHistory(User user) {
@@ -160,5 +233,4 @@ public class TourGuideService {
 		LocalDateTime localDateTime = LocalDateTime.now().minusDays(new Random().nextInt(30));
 		return Date.from(localDateTime.toInstant(ZoneOffset.UTC));
 	}
-
 }
