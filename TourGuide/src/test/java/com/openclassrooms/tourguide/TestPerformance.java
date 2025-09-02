@@ -90,13 +90,10 @@ public class TestPerformance {
 		List<CompletableFuture<Void>> calculateRewardsFutures = new ArrayList<>();
 
 		allUsers.forEach(u -> {
-			// calculateRewards() retourne maintenant un CF qu'on ajoute à la collection
 			CompletableFuture<Void> future = rewardsService.calculateRewards(u);
-			// ajouter chaque CF à la collection
 			calculateRewardsFutures.add(future);
 		});
 
-		// récupérer chaque résultat ici
 		calculateRewardsFutures.forEach(CompletableFuture::join);
 
 		for (User user : allUsers) {
@@ -109,5 +106,4 @@ public class TestPerformance {
 				+ " seconds.");
 		assertTrue(TimeUnit.MINUTES.toSeconds(20) >= TimeUnit.MILLISECONDS.toSeconds(stopWatch.getTime()));
 	}
-
 }

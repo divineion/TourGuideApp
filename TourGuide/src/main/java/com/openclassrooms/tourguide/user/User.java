@@ -96,5 +96,4 @@ public class User {
 	public List<Provider> getTripDeals() {
 		return tripDeals;
 	}
-
 }

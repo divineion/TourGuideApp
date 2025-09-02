@@ -100,7 +100,6 @@ public class TourGuideService {
 		VisitedLocation visitedLocation = gpsUtil.getUserLocation(user.getUserId());
 		user.addToVisitedLocations(visitedLocation);
 
-		// calculateRewards() retourne un CF désormais
 		rewardsService.calculateRewards(user).join();
 
 		return visitedLocation;
@@ -220,5 +219,4 @@ public class TourGuideService {
 		LocalDateTime localDateTime = LocalDateTime.now().minusDays(new Random().nextInt(30));
 		return Date.from(localDateTime.toInstant(ZoneOffset.UTC));
 	}
-
 }
