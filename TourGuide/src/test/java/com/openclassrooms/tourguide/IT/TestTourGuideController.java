@@ -23,6 +23,15 @@ public class TestTourGuideController {
     void testGetNearbyAttractionsInfo_shouldReturnDto() throws Exception {
         String username = service.getAllUsers().get(0).getUserName();
         mockMvc.perform(get("/getNearbyAttractions?userName="+username))
-                .andExpect(jsonPath("$").isArray());
+                .andExpectAll(
+                        jsonPath("$").isArray(),
+                        jsonPath("$.[0].attractionName").isString(),
+                        jsonPath("$.[0].attractionLocation.longitude").isNumber(),
+                        jsonPath("$.[0].attractionLocation.latitude").isNumber(),
+                        jsonPath("$.[0].userLocation.longitude").isNumber(),
+                        jsonPath("$.[0].userLocation.latitude").isNumber(),
+                        jsonPath("$.[0].distance").isNumber(),
+                        jsonPath("$.[0].rewardPoints").isNumber()
+                );
     }
 }
