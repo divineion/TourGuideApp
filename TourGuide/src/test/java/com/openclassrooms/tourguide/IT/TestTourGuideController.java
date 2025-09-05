@@ -1,0 +1,28 @@
+package com.openclassrooms.tourguide.IT;
+
+import com.openclassrooms.tourguide.service.TourGuideService;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.web.servlet.MockMvc;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+
+@AutoConfigureMockMvc
+@SpringBootTest
+public class TestTourGuideController {
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private TourGuideService service;
+
+    @Test
+    void testGetNearbyAttractionsInfo_shouldReturnDto() throws Exception {
+        String username = service.getAllUsers().get(0).getUserName();
+        mockMvc.perform(get("/getNearbyAttractions?userName="+username))
+                .andExpect(jsonPath("$").isArray());
+    }
+}
