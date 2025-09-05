@@ -34,4 +34,25 @@ public class TestTourGuideController {
                         jsonPath("$.[0].rewardPoints").isNumber()
                 );
     }
+
+    //Todo handle exceptions
+    @Disabled
+    @Test
+    void testGetNearbyAttractions_shouldReturnException() throws Exception {
+        String username = "anyUnknownUsername";
+        mockMvc.perform(get("/getNearbyAttractions?userName="+username))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void testGetUserLocation() throws Exception {
+        String username = service.getAllUsers().get(0).getUserName();
+
+        mockMvc.perform(get("/getLocation?userName="+username))
+                .andExpectAll(
+                        jsonPath("$.userId").isNotEmpty(),
+                        jsonPath("$.location.longitude").isNumber(),
+                        jsonPath("$.location.latitude").isNumber()
+                );
+    }
 }
