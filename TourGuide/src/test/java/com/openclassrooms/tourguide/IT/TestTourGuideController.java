@@ -58,4 +58,26 @@ public class TestTourGuideController {
                         jsonPath("$.location.latitude").isNumber()
                 );
     }
+
+    @Test
+    void testGetRewards() throws Exception {
+        String username = service.getAllUsers().get(0).getUserName();
+
+        mockMvc.perform(get("/getRewards?userName=" + username))
+                .andExpectAll(
+                        status().isOk(),
+                        jsonPath("$").isArray()
+                );
+    }
+
+    @Test
+    void testGetTripDeals() throws Exception {
+        String username = service.getAllUsers().get(0).getUserName();
+
+        mockMvc.perform(get("/getTripDeals?userName=" + username))
+                .andExpectAll(
+                        status().isOk(),
+                        jsonPath("$").isArray()
+                );
+    }
 }
